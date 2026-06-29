@@ -1,0 +1,48 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  AWS_REGION: ap-southeast-2
+  ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-2.amazonaws.com
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to ECR
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build and push api
+      run: |
+        docker build -t $ECR_REGISTRY/ai-doc-analyzer/api:${{ github.sha }} ./api
+        docker push $ECR_REGISTRY/ai-doc-analyzer/api:${{ github.sha }}
+        docker tag $ECR_REGISTRY/ai-doc-analyzer/api:${{ github.sha }} $ECR_REGISTRY/ai-doc-analyzer/api:latest
+        docker push $ECR_REGISTRY/ai-doc-analyzer/api:latest
+
+    - name: Build and push worker
+      run: |
+        docker build -t $ECR_REGISTRY/ai-doc-analyzer/worker:${{ github.sha }} ./worker
+        docker push $ECR_REGISTRY/ai-doc-analyzer/worker:${{ github.sha }}
+        docker tag $ECR_REGISTRY/ai-doc-analyzer/worker:${{ github.sha }} $ECR_REGISTRY/ai-doc-analyzer/worker:latest
+        docker push $ECR_REGISTRY/ai-doc-analyzer/worker:latest
+
+    - name: Build and push frontend
+      run: |
+        docker build -t $ECR_REGISTRY/ai-doc-analyzer/frontend:${{ github.sha }} ./frontend
+        docker push $ECR_REGISTRY/ai-doc-analyzer/frontend:${{ github.sha }}
+        docker tag $ECR_REGISTRY/ai-doc-analyzer/frontend:${{ github.sha }} $ECR_REGISTRY/ai-doc-analyzer/frontend:latest
+        docker push $ECR_REGISTRY/ai-doc-analyzer/frontend:latest

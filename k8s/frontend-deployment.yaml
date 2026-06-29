@@ -1,0 +1,42 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-doc-analyzer-frontend
+  namespace: default
+  labels:
+    app: ai-doc-analyzer-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-doc-analyzer-frontend
+  template:
+    metadata:
+      labels:
+        app: ai-doc-analyzer-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/ai-doc-analyzer/frontend:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: 50m
+            memory: 64Mi
+          limits:
+            cpu: 200m
+            memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-doc-analyzer-frontend
+  namespace: default
+spec:
+  selector:
+    app: ai-doc-analyzer-frontend
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80

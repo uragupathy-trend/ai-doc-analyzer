@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-doc-analyzer-worker
+  namespace: default
+  labels:
+    app: ai-doc-analyzer-worker
+    ai-workload: "true"
+    llm-provider: bedrock
+    ai-framework: langchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-doc-analyzer-worker
+  template:
+    metadata:
+      labels:
+        app: ai-doc-analyzer-worker
+        ai-workload: "true"
+        llm-provider: bedrock
+        ai-framework: langchain
+      annotations:
+        ai-model: "au.anthropic.claude-sonnet-4-6"
+    spec:
+      serviceAccountName: SA_NAME
+      containers:
+      - name: worker
+        image: ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/ai-doc-analyzer/worker:latest
+        envFrom:
+        - secretRef:
+            name: ai-doc-analyzer-secrets
+        env:
+        - name: AWS_DEFAULT_REGION
+          value: "ap-southeast-2"
+        - name: BEDROCK_MODEL_ID
+          value: "au.anthropic.claude-sonnet-4-6"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi

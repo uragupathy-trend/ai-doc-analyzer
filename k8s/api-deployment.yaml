@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ai-doc-analyzer-api
+  namespace: default
+  labels:
+    app: ai-doc-analyzer-api
+    ai-workload: "true"
+    llm-provider: bedrock
+    ai-framework: langchain
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ai-doc-analyzer-api
+  template:
+    metadata:
+      labels:
+        app: ai-doc-analyzer-api
+        ai-workload: "true"
+        llm-provider: bedrock
+        ai-framework: langchain
+      annotations:
+        ai-model: "au.anthropic.claude-sonnet-4-6"
+        ai-guard: "vision-one"
+    spec:
+      serviceAccountName: SA_NAME
+      containers:
+      - name: api
+        image: ACCOUNT_ID.dkr.ecr.ap-southeast-2.amazonaws.com/ai-doc-analyzer/api:latest
+        ports:
+        - containerPort: 8000
+        envFrom:
+        - secretRef:
+            name: ai-doc-analyzer-secrets
+        env:
+        - name: AWS_DEFAULT_REGION
+          value: "ap-southeast-2"
+        - name: BEDROCK_MODEL_ID
+          value: "au.anthropic.claude-sonnet-4-6"
+        - name: AI_GUARD_APP_NAME
+          value: "ai-doc-analyzer"
+        resources:
+          requests:
+            cpu: 250m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ai-doc-analyzer-api
+  namespace: default
+spec:
+  selector:
+    app: ai-doc-analyzer-api
+  ports:
+  - port: 8000
+    targetPort: 8000
