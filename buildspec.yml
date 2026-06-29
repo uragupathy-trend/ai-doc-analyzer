@@ -5,13 +5,13 @@ env:
     AWS_REGION_ECR: "ap-southeast-2"
     ACCOUNT_ID: "834797984653"
     APP: "ai-doc-analyzer"
+    ECR_REGISTRY: "834797984653.dkr.ecr.ap-southeast-2.amazonaws.com"
 
 phases:
   pre_build:
     commands:
       - echo "Logging into ECR..."
-      - aws ecr get-login-password --region $AWS_REGION_ECR | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION_ECR.amazonaws.com
-      - ECR_REGISTRY=$ACCOUNT_ID.dkr.ecr.$AWS_REGION_ECR.amazonaws.com
+      - aws ecr get-login-password --region $AWS_REGION_ECR | docker login --username AWS --password-stdin $ECR_REGISTRY
       - echo "Ensuring ECR repos exist..."
       - for repo in api worker frontend; do
           aws ecr describe-repositories --region $AWS_REGION_ECR --repository-names $APP/$repo 2>/dev/null ||
@@ -20,9 +20,11 @@ phases:
 
   build:
     commands:
-      - echo "Building images..."
+      - echo "Building api image..."
       - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/api:latest ./api
+      - echo "Building worker image..."
       - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/worker:latest ./worker
+      - echo "Building frontend image..."
       - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/frontend:latest ./frontend
 
   post_build:
