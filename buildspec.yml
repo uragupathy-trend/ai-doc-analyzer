@@ -21,9 +21,9 @@ phases:
   build:
     commands:
       - echo "Building api image..."
-      - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/api:latest ./api
+      - docker build --no-cache --platform linux/amd64 -t $ECR_REGISTRY/$APP/api:latest ./api
       - echo "Building worker image..."
-      - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/worker:latest ./worker
+      - docker build --no-cache --platform linux/amd64 -t $ECR_REGISTRY/$APP/worker:latest ./worker
       - echo "Building frontend image..."
       - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/frontend:latest ./frontend
 
