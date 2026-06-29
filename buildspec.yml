@@ -1,0 +1,34 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_REGION_ECR: "ap-southeast-2"
+    ACCOUNT_ID: "834797984653"
+    APP: "ai-doc-analyzer"
+
+phases:
+  pre_build:
+    commands:
+      - echo "Logging into ECR..."
+      - aws ecr get-login-password --region $AWS_REGION_ECR | docker login --username AWS --password-stdin $ACCOUNT_ID.dkr.ecr.$AWS_REGION_ECR.amazonaws.com
+      - ECR_REGISTRY=$ACCOUNT_ID.dkr.ecr.$AWS_REGION_ECR.amazonaws.com
+      - echo "Ensuring ECR repos exist..."
+      - for repo in api worker frontend; do
+          aws ecr describe-repositories --region $AWS_REGION_ECR --repository-names $APP/$repo 2>/dev/null ||
+          aws ecr create-repository --region $AWS_REGION_ECR --repository-name $APP/$repo --image-scanning-configuration scanOnPush=true;
+        done
+
+  build:
+    commands:
+      - echo "Building images..."
+      - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/api:latest ./api
+      - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/worker:latest ./worker
+      - docker build --platform linux/amd64 -t $ECR_REGISTRY/$APP/frontend:latest ./frontend
+
+  post_build:
+    commands:
+      - echo "Pushing images to ECR..."
+      - docker push $ECR_REGISTRY/$APP/api:latest
+      - docker push $ECR_REGISTRY/$APP/worker:latest
+      - docker push $ECR_REGISTRY/$APP/frontend:latest
+      - echo "All images pushed successfully."
