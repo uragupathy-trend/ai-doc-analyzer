@@ -68,6 +68,7 @@ jobs:
         aws-region: ${{ env.AWS_REGION }}
 
     - name: Login to ECR
+      id: ecr-login
       uses: aws-actions/amazon-ecr-login@v2
 
     - name: Scan ${{ matrix.image }} image with TMAS
@@ -77,7 +78,7 @@ jobs:
         vulnerabilitiesScan: "true"
         malwareScan: "true"
         secretsScan: "true"
-        additionalArgs: --region=ap-southeast-2
+        additionalArgs: --region=ap-southeast-2 --registry-username=AWS --registry-password=${{ steps.ecr-login.outputs.docker_password_834797984653_dkr_ecr_ap_southeast_2_amazonaws_com }}
         tmasApiKey: ${{ secrets.TMAS_API_KEY }}
         githubToken: ${{ secrets.GITHUB_TOKEN }}
 
