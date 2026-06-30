@@ -115,6 +115,41 @@ async def analyze_document(
     }
 
 
+@app.post("/chat")
+async def chat(request: dict):
+    question = request.get("question", "")
+    if not question:
+        raise HTTPException(status_code=400, detail="question is required")
+
+    system_prompt = "You are a document analysis assistant. Answer the user's question."
+    user_prompt = question
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt},
+    ]
+
+    guard_result = guard.scan_prompt(messages)
+    if is_blocked(guard_result):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Request blocked by AI App Guard", "reasons": guard_result.get("reasons", [])},
+        )
+
+    lc_messages = [SystemMessage(content=system_prompt), HumanMessage(content=user_prompt)]
+    response = llm.invoke(lc_messages)
+    response_text = response.content
+
+    response_guard = guard.scan_response(response_text, BEDROCK_MODEL_ID)
+    if is_blocked(response_guard):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Response blocked by AI App Guard", "reasons": response_guard.get("reasons", [])},
+        )
+
+    return {"answer": response_text}
+
+
 # !! INTENTIONAL VULNERABILITY: SQL injection !!
 @app.get("/search")
 def search_documents(query: str):
