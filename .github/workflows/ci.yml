@@ -79,7 +79,7 @@ jobs:
         secretsScan: "true"
         tmasApiKey: ${{ secrets.TMAS_API_KEY }}
         githubToken: ${{ secrets.GITHUB_TOKEN }}
-        region: au
+        region: ap-southeast-2
 
     - name: Upload TMAS scan report
       if: "!cancelled()"
